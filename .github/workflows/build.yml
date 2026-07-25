@@ -36,6 +36,12 @@ jobs:
           # cp hu-overrides/locales/hu-HU.server.po \
           #    twenty/packages/twenty-server/src/engine/core-modules/i18n/locales/hu-HU.po
 
+      - name: Docker-kompatibilis tag előállítása
+        id: vars
+        run: |
+          SAFE_TAG=$(echo "${{ github.event.inputs.twenty_version }}" | tr '/' '-')
+          echo "safe_tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+
       - name: Docker Buildx beállítása
         uses: docker/setup-buildx-action@v3
 
@@ -53,7 +59,7 @@ jobs:
           file: ./twenty/packages/twenty-docker/twenty/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ github.event.inputs.twenty_version }}
+            ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ steps.vars.outputs.safe_tag }}
             ghcr.io/${{ github.repository_owner }}/twenty-hu:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
