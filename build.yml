@@ -1,0 +1,59 @@
+name: Build Hungarian Twenty image
+
+on:
+  workflow_dispatch:
+    inputs:
+      twenty_version:
+        description: "Twenty release tag (pl. twenty/v2.23.2)"
+        required: true
+        default: "twenty/v2.23.2"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Saját repo checkout (a hu-HU.po forrása)
+        uses: actions/checkout@v4
+        with:
+          path: hu-overrides
+
+      - name: Twenty checkout a megadott verzión
+        uses: actions/checkout@v4
+        with:
+          repository: twentyhq/twenty
+          ref: ${{ github.event.inputs.twenty_version }}
+          path: twenty
+
+      - name: Magyar fordítás bemásolása
+        run: |
+          cp hu-overrides/locales/hu-HU.po \
+             twenty/packages/twenty-front/src/locales/hu-HU.po
+          # ha egyszer a backend .po is elkészül, ide jön:
+          # cp hu-overrides/locales/hu-HU.server.po \
+          #    twenty/packages/twenty-server/src/engine/core-modules/i18n/locales/hu-HU.po
+
+      - name: Docker Buildx beállítása
+        uses: docker/setup-buildx-action@v3
+
+      - name: Bejelentkezés a GitHub Container Registrybe
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image build és push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./twenty
+          file: ./twenty/packages/twenty-docker/twenty/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ github.event.inputs.twenty_version }}
+            ghcr.io/${{ github.repository_owner }}/twenty-hu:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
