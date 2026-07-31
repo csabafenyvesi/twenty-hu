@@ -1920,7 +1920,7 @@ msgstr "Egész nap"
 #. js-lingui-id: dJn2LR
 #: src/modules/settings/accounts/components/SettingsAccountsRowDropdownMenu.tsx
 msgid "All emails and events linked to this account ({accountHandle}) will be deleted"
-msgstr "A fiókhoz kapcsolódó összes email és esemény törlődik ({accountHandle})"
+msgstr "A fiókhoz kapcsolódó összes e-mail és esemény törlődik ({accountHandle})"
 
 #. js-lingui-id: GNJgJf
 #: src/modules/settings/admin-panel/health-status/hooks/useRetryJobs.ts
@@ -2237,7 +2237,7 @@ msgstr "Bárki, aki jóváhagyott e-mail doménnel rendelkezik, megtalálhatja �
 #. js-lingui-id: xJR+Wq
 #: src/pages/settings/members/tabs/SettingsWorkspaceMembersInviteTab.tsx
 msgid "Anyone with an email address at these domains is allowed to sign up for this workspace."
-msgstr "Bárki, akinek van email címe ezekről a tartományokról, csatlakozhat ehhez a munkaterülethez."
+msgstr "Bárki csatlakozhat ehhez a munkaterülethez, akinek ezeken a domaineken van e-mail-címe."
 
 #. js-lingui-id: OZtEcz
 #: src/modules/settings/mcp-and-apis/components/PlaygroundSetupForm.tsx
@@ -5711,7 +5711,7 @@ msgstr "Az egyéni API-név beállításához kapcsolja ki a \"Címke és API-n�
 #: src/modules/settings/data-model/fields/forms/components/SettingsDataModelFieldIconLabelForm.tsx
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
 msgid "Deactivate \"Synchronize Objects Labels and API Names\" to set a custom API name"
-msgstr "Deaktiválja a \"Synchronize Objects Labels and API Names\" lehetőséget az egyedi API név beállításához"
+msgstr "Az egyedi API-név beállításához kapcsolja ki az \"Objektumok címkéinek és API-neveinek szinkronizálása\" beállítást"
 
 #. js-lingui-id: T2YbXF
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectSettings.tsx
@@ -6818,7 +6818,7 @@ msgstr "különben ha"
 #: src/pages/settings/members/tabs/SettingsWorkspaceMembersTeamTab.tsx
 #: src/pages/settings/profile/SettingsProfile.tsx
 msgid "Email"
-msgstr "Email"
+msgstr "E-mail"
 
 #. js-lingui-id: hzKQCy
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
@@ -6867,7 +6867,7 @@ msgstr "Az e-mail-címnek érvényesnek kell lennie"
 #. js-lingui-id: QT/Wo7
 #: src/modules/settings/accounts/components/SettingsAccountsBlocklistInput.tsx
 msgid "Email or domain is already in blocklist"
-msgstr "Az email vagy domain már szerepel a tiltólistában"
+msgstr "Az e-mail-cím vagy domain már szerepel a tiltólistában"
 
 #. js-lingui-id: Xl929X
 #: src/modules/activities/emails/hooks/useSendEmail.ts
@@ -7707,7 +7707,7 @@ msgstr "Minden"
 #. js-lingui-id: QQlMid
 #: src/modules/settings/accounts/components/SettingsAccountsMessageChannelDetails.tsx
 msgid "Exclude group emails"
-msgstr "Csoportos email címek kizárása"
+msgstr "Csoportos e-mail-címek kizárása"
 
 #. js-lingui-id: +tk2yZ
 #: src/modules/settings/accounts/components/SettingsAccountsMessageChannelDetails.tsx
@@ -13781,7 +13781,7 @@ msgstr "Függőben"
 #. js-lingui-id: PxBA+g
 #: src/modules/settings/accounts/components/SettingsAccountsMessageAutoCreationCard.tsx
 msgid "People I’ve sent emails to and received emails from."
-msgstr "Azok a személyek, akiknek küldtem emailt, és akiktől emailt kaptam."
+msgstr "Azok a személyek, akiknek e-mailt küldtem, és akiktől e-mailt kaptam."
 
 #. js-lingui-id: U/UvMm
 #: src/modules/settings/accounts/components/SettingsAccountsMessageAutoCreationCard.tsx
@@ -17290,7 +17290,7 @@ msgstr "Katalógus szinkronizálása"
 #. js-lingui-id: MsxItJ
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useActionRolePermissionFlagConfig.ts
 msgid "Sync email and calendar accounts"
-msgstr "Email- és naptár fiókok szinkronizálása"
+msgstr "E-mail- és naptárfiókok szinkronizálása"
 
 #. js-lingui-id: 5TRY4+
 #: src/modules/settings/accounts/components/SettingsAccountsConnectedAccountsRowRightContainer.tsx
