@@ -114,13 +114,24 @@ jobs:
           IMG="ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ steps.vars.outputs.safe_tag }}"
           FRONT_DIR="/app/packages/twenty-server/dist/front"
 
+          echo "--- diagnosztika: grep verzió a képen belül ---"
+          docker run --rm --entrypoint sh "$IMG" -c "grep --help 2>&1 | head -3" || true
+          echo "--- diagnosztika: létezik-e a front könyvtár, hány fájl van benne ---"
+          docker run --rm --entrypoint sh "$IMG" -c "ls -la $FRONT_DIR 2>&1 | head -5; find $FRONT_DIR -type f 2>&1 | wc -l" || true
+
           # Kanárimadár-stringek: ezek CSAK a mi javított fordításunkban szerepelnek.
           # Az eredeti gépi fordításban 'ravasz'/'Kiváltó', 'Webhorgok', 'NYUGALOM' állt.
+          # FONTOS: a bázis image Alpine/BusyBox grep-et használ, ami nem ismeri a
+          # GNU-only hosszú kapcsolókat (pl. --binary-files=text) - azokat itt nem használjuk.
           HITS=$(docker run --rm --user 0 --entrypoint sh "$IMG" -c \
-            "grep -rl --binary-files=text -e 'Eseményindító' -e 'Háttérfeladat' -e 'Rendszerprompt' $FRONT_DIR 2>/dev/null | head -5" || true)
+            "grep -rl -e 'Eseményindító' -e 'Háttérfeladat' -e 'Rendszerprompt' $FRONT_DIR" 2>&1 | tee /tmp/hits_err.log | head -5 || true)
+          echo "--- grep (javított stringek) nyers kimenete/hibája ---"
+          cat /tmp/hits_err.log || true
 
           BAD=$(docker run --rm --user 0 --entrypoint sh "$IMG" -c \
-            "grep -rl --binary-files=text -e 'Webhorgok' -e 'NYUGALOM' $FRONT_DIR 2>/dev/null | head -5" || true)
+            "grep -rl -e 'Webhorgok' -e 'NYUGALOM' $FRONT_DIR" 2>&1 | tee /tmp/bad_err.log | head -5 || true)
+          echo "--- grep (régi hibás stringek) nyers kimenete/hibája ---"
+          cat /tmp/bad_err.log || true
 
           {
             echo ""
