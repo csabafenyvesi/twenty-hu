@@ -36,11 +36,16 @@ jobs:
           # cp hu-overrides/locales/hu-HU.server.po \
           #    twenty/packages/twenty-server/src/engine/core-modules/i18n/locales/hu-HU.po
 
-      - name: Docker-kompatibilis tag előállítása
+      - name: Docker-kompatibilis tag és APP_VERSION előállítása
         id: vars
         run: |
-          SAFE_TAG=$(echo "${{ github.event.inputs.twenty_version }}" | tr '/' '-')
+          RAW="${{ github.event.inputs.twenty_version }}"
+          SAFE_TAG=$(echo "$RAW" | tr '/' '-')
+          # a Twenty APP_VERSION-t 'vX.Y.Z' alakban várja, a 'twenty/' előtag nélkül
+          APP_VERSION="${RAW#twenty/}"
           echo "safe_tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+          echo "app_version=$APP_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Docker tag: $SAFE_TAG | APP_VERSION: $APP_VERSION"
 
       - name: Docker Buildx beállítása
         uses: docker/setup-buildx-action@v3
@@ -57,9 +62,100 @@ jobs:
         with:
           context: ./twenty
           file: ./twenty/packages/twenty-docker/twenty/Dockerfile
+          target: twenty
+          build-args: |
+            APP_VERSION=${{ steps.vars.outputs.app_version }}
+          provenance: false
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ steps.vars.outputs.safe_tag }}
             ghcr.io/${{ github.repository_owner }}/twenty-hu:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Image ellenőrzése (metaadatok)
+        id: verify_meta
+        run: |
+          IMG="ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ steps.vars.outputs.safe_tag }}"
+          EXPECTED="${{ steps.vars.outputs.app_version }}"
+          docker pull "$IMG"
+
+          APP_VER=$(docker image inspect "$IMG" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^APP_VERSION=' | cut -d= -f2)
+          USER_ID=$(docker image inspect "$IMG" --format '{{.Config.User}}')
+          ENTRY=$(docker image inspect "$IMG" --format '{{json .Config.Entrypoint}}')
+          CMD=$(docker image inspect "$IMG" --format '{{json .Config.Cmd}}')
+
+          echo "APP_VERSION : $APP_VER (várt: $EXPECTED)"
+          echo "User        : $USER_ID (várt: 1000)"
+          echo "Entrypoint  : $ENTRY"
+          echo "Cmd         : $CMD"
+
+          FAIL=0
+          [ "$APP_VER" = "$EXPECTED" ] || { echo "::error::APP_VERSION eltér: '$APP_VER' != '$EXPECTED'"; FAIL=1; }
+          [ "$USER_ID" = "1000" ]      || { echo "::error::User nem 1000, hanem '$USER_ID' (rossz build target?)"; FAIL=1; }
+          echo "$ENTRY" | grep -q 'entrypoint.sh' || { echo "::error::Hiányzik az entrypoint.sh"; FAIL=1; }
+          [ "$CMD" != "null" ]         || { echo "::error::Hiányzik a Cmd (rossz build target?)"; FAIL=1; }
+
+          {
+            echo "### Image metaadatok"
+            echo ""
+            echo "| mező | érték | várt |"
+            echo "|---|---|---|"
+            echo "| APP_VERSION | \`$APP_VER\` | \`$EXPECTED\` |"
+            echo "| User | \`$USER_ID\` | \`1000\` |"
+            echo "| Entrypoint | \`$ENTRY\` | tartalmazza: entrypoint.sh |"
+            echo "| Cmd | \`$CMD\` | nem null |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit $FAIL
+
+      - name: Magyar fordítás jelenlétének ellenőrzése
+        run: |
+          IMG="ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ steps.vars.outputs.safe_tag }}"
+          FRONT_DIR="/app/packages/twenty-server/dist/front"
+
+          # Kanárimadár-stringek: ezek CSAK a mi javított fordításunkban szerepelnek.
+          # Az eredeti gépi fordításban 'ravasz'/'Kiváltó', 'Webhorgok', 'NYUGALOM' állt.
+          HITS=$(docker run --rm --user 0 --entrypoint sh "$IMG" -c \
+            "grep -rl --binary-files=text -e 'Eseményindító' -e 'Háttérfeladat' -e 'Rendszerprompt' $FRONT_DIR 2>/dev/null | head -5" || true)
+
+          BAD=$(docker run --rm --user 0 --entrypoint sh "$IMG" -c \
+            "grep -rl --binary-files=text -e 'Webhorgok' -e 'NYUGALOM' $FRONT_DIR 2>/dev/null | head -5" || true)
+
+          {
+            echo ""
+            echo "### Magyar fordítás"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$HITS" ]; then
+            echo "Javított magyar stringek megtalálva a bundle-ben."
+            echo "- ✅ Javított fordítás jelen van (\`Eseményindító\` / \`Háttérfeladat\` / \`Rendszerprompt\`)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::A javított magyar stringek NEM találhatók a bundle-ben – a .po nem került be, vagy nem fordult le."
+            echo "- ❌ A javított fordítás NEM található a bundle-ben" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          if [ -n "$BAD" ]; then
+            echo "::error::A RÉGI, hibás stringek is megtalálhatók (Webhorgok / NYUGALOM) – valószínűleg a régi katalógus került be."
+            echo "- ❌ Régi hibás stringek is jelen vannak" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          else
+            echo "- ✅ A régi hibás stringek eltűntek" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Használati útmutató a összefoglalóba
+        if: success()
+        run: |
+          {
+            echo ""
+            echo "### Élesítés"
+            echo ""
+            echo '```bash'
+            echo "cd /opt/twenty"
+            echo "docker compose exec -T db pg_dump -U postgres -d default | gzip > ~/twenty-backup-\$(date +%F-%H%M).sql.gz"
+            echo "docker pull ghcr.io/${{ github.repository_owner }}/twenty-hu:${{ steps.vars.outputs.safe_tag }}"
+            echo "docker compose up -d"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
